@@ -1,0 +1,37 @@
+<html>
+<header>
+    <title>Diego Diaz Berith</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="css/portfolio.css" type="text/css">
+    <script>
+        $(document).ready(function () {
+            $('.text').html(function (i, html) {
+                var chars = $.trim(html).split("");
+
+                return '<span>' + chars.join('</span><span>') + '</span>';
+            });
+        })
+    </script>
+</header>
+ <!--🤡 -->
+<body>
+    <div class="container">
+        <span class="text color-text-flow">Diego Diaz Matousek//berith</span>
+        <br>
+        <span class="text color-text-flow">I like to code</span>
+        <a href="http://github.com/berithpy"><img src="gfx/github-face.png"></a>
+        <br>
+        <span class="text color-text-flow">I also make games sometimes!</span>
+        <a href="http://berith.itch.io"><img src="gfx/gamepad-variant.png"></a>
+        <br>
+        <span class="text color-text-flow">Follow me on twitter!</span>
+        <a href="http://twitter.com/berithm"><img src="gfx/twitter.png"></a>
+        <br>
+        <span class="text color-text-flow">Get in contact!</span>
+        <a href="mailto:berith.py@gmail.com"><img src="gfx/email.png"></a>
+        <br>
+	<span class="text color-text-flow">My resume</span>
+        <a href="./resume.html"><img src="gfx/document.png"></a>
+    </div>
+</body>
+</html>
