@@ -1,0 +1,44 @@
+[
+    {
+        "company": "Correlation One",
+        "role": "Senior Engineer II",
+        "description": "Integrated Open edX into a React/Django platform, built learner tools (AI resume builder, chrome extension job tracker), improved async file uploads, and maintained internal reporting apps.",
+        "startDate": "June 2023",
+        "endDate": "Present"
+    },
+    {
+        "company": "Dormify",
+        "role": "Software Developer",
+        "description": "Redesigned checkout components using React and Next.js; integrated Klaviyo with a C# backend to modernize email workflows.",
+        "startDate": "March 2023",
+        "endDate": "July 2023"
+    },
+    {
+        "company": "Startgrid",
+        "role": "Software Developer",
+        "description": "Helped build an MVP with Next.js and Go; set up CI/CD and Playwright tests; supported a successful company pivot and onboarding process.",
+        "startDate": "November 2021",
+        "endDate": "December 2022"
+    },
+    {
+        "company": "OCM",
+        "role": "Software Developer / Team Lead",
+        "description": "Led development of a CRM replacing legacy systems; worked on React, Go, GCP, and serverless pipelines for data cleanup and analysis.",
+        "startDate": "July 2019",
+        "endDate": "November 2021"
+    },
+    {
+        "company": "Ekumen",
+        "role": "Software Developer",
+        "description": "Built robotics simulation tools, chatbots, and infrastructure for deploying full-stack apps with Kubernetes, Docker, and AWS.",
+        "startDate": "October 2017",
+        "endDate": "August 2019"
+    },
+    {
+        "company": "CBA S.A.",
+        "role": "Software Developer",
+        "description": "Worked on legacy CRM modernization with Django and AngularJS; built various microservices including a Facebook chatbot and currency exchange APIs.",
+        "startDate": "January 2016",
+        "endDate": "October 2017"
+    }
+]

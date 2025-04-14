@@ -1,0 +1,37 @@
+[
+    {
+        "name": "RPS population simulator",
+        "description": "Inspired by an online gif, a small webtoy that spawns Rocks Papers and Scissors, you can simulate a couple of conditions and watch the game play itself. Built with Phaser 3",
+        "liveLink": "https://berith.moe/rps/",
+        "previewImage": "/project1.png",
+        "repoUrl": "https://github.com/berithpy/phaser3-RPS"
+    },
+    {
+        "name": "Sorting Algorithms Visualizer",
+        "description": "Inspired by a YouTube video, a small web toy that visualizes and assigns a sound to each number in an array and then it sorts it step by step with the chosen algorithm. Built with React",
+        "liveLink": "https://berith.moe/sorting-viz/",
+        "previewImage": "/project2.png",
+        "repoUrl": "https://github.com/berithpy/sorting-visualizer"
+    },
+    {
+        "name": "Three js old portfolio",
+        "description": "The old version of my resume website, during the pandemic I got into VR and did some 3D modeling, part of this process culminated in making my old portfolio page. Built with Three.js, and the models were made with Blender",
+        "liveLink": "https://berith.moe/threejs-resume/",
+        "previewImage": "/project3.png",
+        "repoUrl": "https://github.com/berithpy/threejs-personal-site"
+    },
+    {
+        "name": "Werecat",
+        "description": "Game made during a global game jam in 2022 with my wife. You play as a rat with a revolver. Built with Phaser 3",
+        "liveLink": "https://berith.itch.io/werecat",
+        "previewImage": "/project4.png",
+        "repoUrl": "https://github.com/genba-games/ggj2022"
+    },
+    {
+        "name": "Morse Madness",
+        "description": "Game made during a global game jam as part of a team, asynchronous cooperative game where you have to decode morse code to progress. Built with Phaser 3",
+        "liveLink": "https://berith.itch.io/m-m",
+        "previewImage": "/project5.png",
+        "repoUrl": "https://github.com/genba-games/morsemadness"
+    }
+]
