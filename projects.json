@@ -7,6 +7,13 @@
         "repoUrl": "https://github.com/berithpy/phaser3-RPS"
     },
     {
+        "name": "1 Gorilla vs 100 humans",
+        "description": "Sandbox to 'simulate' a fight between 1 gorilla and 100 humans, you can change the stats of the gorilla and the humans, and watch them fight.",
+        "liveLink": "https://berith.moe/1vs100",
+        "previewImage": "/project6.png",
+        "repoUrl": "https://github.com/berithpy/"
+    },
+    {
         "name": "Sorting Algorithms Visualizer",
         "description": "Inspired by a YouTube video, a small web toy that visualizes and assigns a sound to each number in an array and then it sorts it step by step with the chosen algorithm. Built with React",
         "liveLink": "https://berith.moe/sorting-viz/",

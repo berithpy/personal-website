@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gorilla vs 100 Humans</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #222;
+            font-family: sans-serif;
+            color: #fff
+        }
+
+        header {
+            padding: .5rem;
+            text-align: center
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            box-sizing: border-box
+        }
+
+        .sidebar {
+            width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: .7rem
+        }
+
+        canvas {
+            flex: 1;
+            border: 1px solid #555;
+            background: #111;
+            border-radius: 4px
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: .85rem
+        }
+
+        input[type=number] {
+            width: 90px;
+            padding: .2rem .4rem;
+            border: none;
+            background: #333;
+            color: #fff;
+            border-radius: 3px
+        }
+
+        button {
+            padding: .4rem .8rem;
+            border: none;
+            border-radius: 4px;
+            background: #06a;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer
+        }
+
+        button:disabled {
+            opacity: .4;
+            cursor: not-allowed
+        }
+
+        ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            max-height: 220px;
+            overflow-y: auto;
+            font-size: .8rem;
+            border-top: 1px solid #444
+        }
+
+        li {
+            padding: .25rem 0;
+            border-bottom: 1px solid #333
+        }
+
+        #timer {
+            font-weight: 600
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>🦍 Gorilla vs 100 Humans</h1>
+    </header>
+    <main>
+        <div style="flex:1;display:flex;gap:1rem;justify-content: center;">
+
+            <section class="sidebar">
+                <!-- Parameters -->
+                <label>Humans <input id="inHumans" type="number" value="100" min="1" max="500"></label>
+                <label>Human HP <input id="inHumanHp" type="number" value="10"></label>
+                <label>Gorilla HP <input id="inGorillaHp" type="number" value="300"></label>
+                <label>Human Speed (px) <input id="inHumanSpeed" type="number" value="1.2" step="0.1"></label>
+                <label>Gorilla Speed (px) <input id="inGorillaSpeed" type="number" value="2.4" step="0.1"></label>
+                <label>Human Reach (px) <input id="inHumanRange" type="number" value="18"></label>
+                <label>Gorilla Reach (px)<input id="inGorillaRange" type="number" value="32"></label>
+                <label>Human DMG min <input id="inHumanDMin" type="number" value="0.2" step="0.1"></label>
+                <label>Human DMG max <input id="inHumanDMax" type="number" value="1.2" step="0.1"></label>
+                <label>Gorilla DMG min <input id="inGorillaDMin" type="number" value="8"></label>
+                <label>Gorilla DMG max <input id="inGorillaDMax" type="number" value="18"></label>
+                <label>Human CD (ms) <input id="inHumanCD" type="number" value="500"></label>
+                <label>Gorilla CD (ms) <input id="inGorillaCD" type="number" value="300"></label>
+                <label>Base Knockback <input id="inKnockback" type="number" value="10" step="1"></label>
+                <label>Human Knockback Min mod (px) <input id="inHumanKnockbackMin" type="number" value="0.5"
+                        step="0.1"></label>
+                <label>Human Knockback Max mod (px) <input id="inHumanKnockbackMax" type="number" value="0.5"
+                        step="0.1"></label>
+                <label>Gorilla Knockback Min mod (px) <input id="inGorillaKnockbackMin" type="number" value="0.1"
+                        step="0.1"></label>
+                <label>Gorilla Knockback Max mod (px)<input id="inGorillaKnockbackMax" type="number" value="10"
+                        step="0.1"></label>
+            </section>
+            <div>
+                <canvas id="canvas" width="800" height="600"></canvas>
+            </div>
+            <section class="sidebar">
+                <label>Auto-runs <input id="inAuto" type="number" value="0" min="0"></label>
+                <!-- Controls -->
+                <div style="display:flex;gap:.5rem">
+                    <button id="btnStart">START</button>
+                    <button id="btnPause" disabled>PAUSE</button>
+                    <button id="btnStop" disabled>STOP</button>
+                    <button id="btnLoadConfig">Load Config</button> <!-- Added Load Config button -->
+                </div>
+                <div>⏱️ Elapsed: <span id="timer">0.0</span> s</div>
+                <h4 style="margin:.5rem 0 .2rem">History (click on results to copy config)</h4>
+                <ul id="history"></ul>
+            </section>
+        </div>
+
+    </main>
+
+    <script>
+        /* ==== Helper shortcuts ==== */
+        // Shortcut for getting an element by its ID
+        const getElementById = id => document.getElementById(id);
+        // Generates a random number between a (inclusive) and b (exclusive)
+        const randomRange = (a, b) => Math.random() * (b - a) + a;
+
+        /* ==== Canvas setup ==== */
+        const canvas = getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const canvasWidth = canvas.width, canvasHeight = canvas.height;
+
+        /* ==== Environment modifiers ==== */
+        // Radius around corpses where actors are slowed
+        const SLOW_RADIUS = 8;
+        // Factor by which speed is multiplied when near a corpse
+        const SLOW_FACTOR = 0.4;
+        // Distance actors are knocked back when hit - REMOVED, now configurable
+        // const KNOCKBACK = 10;
+
+        /* ==== Actor class ==== */
+        // Represents a participant (human or gorilla) in the simulation
+        class Actor {
+            constructor(x, y, hp, speed, range, damageRange, color, radius, cooldown, knockbackMin, knockbackMax, knockback) {
+                this.x = x; // Current x position
+                this.y = y; // Current y position
+                this.hp = hp; // Current health points
+                this.maxHp = hp; // Maximum health points
+                this.baseSpeed = speed; // Base movement speed
+                this.range = range; // Attack range
+                this.damageRange = damageRange; // Min/Max damage [min, max]
+                this.color = color; // Color for drawing
+                this.radius = radius; // Radius for drawing and collision
+                this.baseCooldown = cooldown; // Base attack cooldown time (ms)
+                this.cooldown = 0; // Current cooldown timer (ms)
+                this.alive = true; // Status flag
+                this.knockbackMin = knockbackMin; // Minimum knockback multiplier
+                this.knockbackMax = knockbackMax; // Maximum knockback multiplier
+                this.knockback = knockback; // Base knockback strength
+            }
+
+            // Calculate distance to another actor (o)
+            distanceTo(other) { return Math.hypot(this.x - other.x, this.y - other.y); }
+
+            // Keep the actor within canvas bounds
+            clampToBounds() {
+                this.x = Math.min(Math.max(this.radius, this.x), canvasWidth - this.radius);
+                this.y = Math.min(Math.max(this.radius, this.y), canvasHeight - this.radius);
+            }
+
+            // Set position and ensure it's within bounds
+            setPosition(newX, newY) {
+                this.x = newX;
+                this.y = newY;
+                this.clampToBounds();
+            }
+
+            // Update actor state for a time step (dt in ms)
+            tick(deltaTime) {
+                if (this.cooldown > 0) {
+                    this.cooldown = Math.max(0, this.cooldown - deltaTime);
+                }
+            }
+
+            // Check if the actor can attack (cooldown finished)
+            canHit() { return this.cooldown === 0; }
+
+            // Perform an attack on a target actor (t)
+            hit(target) {
+                // Apply random damage within the defined range
+                target.hp -= randomRange(this.damageRange[0], this.damageRange[1]);
+                if (target.hp <= 0) {
+                    target.alive = false; // Mark target as dead if HP drops below zero
+                }
+                this.cooldown = this.baseCooldown; // Reset attack cooldown
+
+                // Apply knockback to the target
+                const kx = this.knockback * randomRange(this.knockbackMin, this.knockbackMax)
+                const ky = this.knockback * randomRange(this.knockbackMin, this.knockbackMax)
+                const deltaX = target.x - this.x;
+                const deltaY = target.y - this.y;
+                const length = Math.hypot(deltaX, deltaY) || 1; // Avoid division by zero
+                target.setPosition(target.x + deltaX / length * kx, target.y + deltaY / length * ky);
+            }
+
+            // Move towards a target actor (t), considering slowdown near corpses
+            moveTo(target, corpses) {
+                const deltaX = target.x - this.x;
+                const deltaY = target.y - this.y;
+                const length = Math.hypot(deltaX, deltaY);
+                if (!length) return; // Already at the target
+
+                let currentSpeed = this.baseSpeed;
+                // Check for slowdown effect from nearby corpses
+                for (const corpse of corpses) {
+                    if (this.distanceTo(corpse) <= SLOW_RADIUS) {
+                        currentSpeed *= SLOW_FACTOR;
+                        break; // Apply slowdown only once
+                    }
+                }
+                // Move towards the target
+                this.setPosition(this.x + deltaX / length * currentSpeed, this.y + deltaY / length * currentSpeed);
+            }
+
+            // Draw the actor on the canvas
+            draw() {
+                context.fillStyle = this.alive ? this.color : '#555'; // Use grey for dead actors
+                context.beginPath();
+                context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                context.fill();
+
+                // Draw health bar if alive and not full HP
+                if (this.alive && this.hp < this.maxHp) {
+                    const healthBarWidth = this.radius * 4;
+                    const healthFraction = this.hp / this.maxHp;
+                    const healthBarX = this.x - healthBarWidth / 2;
+                    const healthBarY = this.y - this.radius - 8;
+                    // Background of health bar
+                    context.fillStyle = '#333';
+                    context.fillRect(healthBarX, healthBarY, healthBarWidth, 3);
+                    // Foreground (actual health)
+                    context.fillStyle = `hsl(${healthFraction * 120}, 100%, 50%)`; // Green to Red gradient
+                    context.fillRect(healthBarX, healthBarY, healthBarWidth * healthFraction, 3);
+                }
+            }
+        }
+
+        /* ==== Battle controller ==== */
+        // Manages the simulation state and loop
+        class Battle {
+            constructor(config, onDoneCallback, onTickCallback) {
+                this.config = config; // Simulation parameters
+                this.runConfig = JSON.parse(JSON.stringify(config)); // Store a deep copy of the config for this run
+                this.onDone = onDoneCallback; // Function to call when simulation ends
+                this.onTick = onTickCallback; // Function to call each frame update
+                this.init();
+            }
+
+            // Initialize the simulation state
+            init() {
+                const cfg = this.config;
+                this.elapsedTime = 0;
+                this.isPaused = false;
+
+                // Create the gorilla actor
+                this.gorilla = new Actor(
+                    canvasWidth / 2, canvasHeight / 2, cfg.gorillaHp, cfg.gorillaSpeed, cfg.gorillaRange,
+                    cfg.gorillaDamage, 'orange', 6, cfg.gorillaCooldown,
+                    cfg.gorillaKnockbackMin, cfg.gorillaKnockbackMax, cfg.knockback // Pass knockback limits
+                );
+
+                // Create human actors
+                this.humans = [];
+                for (let i = 0; i < cfg.humanCount; i++) {
+                    // Spawn humans in a ring around the gorilla
+                    const angle = randomRange(0, Math.PI * 2);
+                    const radius = randomRange(180, 280);
+                    this.humans.push(new Actor(
+                        this.gorilla.x + Math.cos(angle) * radius, this.gorilla.y + Math.sin(angle) * radius,
+                        cfg.humanHp, cfg.humanSpeed, cfg.humanRange, cfg.humanDamage,
+                        'skyblue', 4, cfg.humanCooldown,
+                        cfg.humanKnockbackMin, cfg.humanKnockbackMax, cfg.knockback // Pass knockback limits
+                    ));
+                }
+
+                this.lastTimestamp = performance.now();
+                this.isRunning = true;
+                // Start the game loop
+                requestAnimationFrame(this.loop.bind(this));
+            }
+
+            // Main simulation loop
+            loop(timestamp) {
+                if (!this.isRunning) return; // Stop loop if requested
+
+                const deltaTime = timestamp - this.lastTimestamp;
+                this.lastTimestamp = timestamp;
+
+                if (!this.isPaused) {
+                    this.elapsedTime += deltaTime;
+                    this.onTick((this.elapsedTime / 1000).toFixed(1)); // Update UI timer
+                    this.update(deltaTime); // Run simulation logic
+                }
+
+                this.draw(); // Render the current state
+                requestAnimationFrame(this.loop.bind(this)); // Request next frame
+            }
+
+            // Update the state of all actors for one time step (dt)
+            update(deltaTime) {
+                const liveHumans = this.humans.filter(h => h.alive);
+                const deadHumans = this.humans.filter(h => !h.alive);
+
+                // Check win/loss conditions
+                if (!this.gorilla.alive || !liveHumans.length) {
+                    this.isRunning = false;
+                    this.onDone({
+                        gorillaWon: this.gorilla.alive,
+                        humansLeft: liveHumans.length,
+                        time: (this.elapsedTime / 1000).toFixed(1),
+                        config: this.runConfig // Include the config used for this run
+                    });
+                    return;
+                }
+
+                // Update gorilla state
+                this.gorilla.tick(deltaTime);
+                // Update human states
+                liveHumans.forEach(human => human.tick(deltaTime));
+
+                // Gorilla AI: Find closest human target
+                let closestHuman = null;
+                let minDistanceSq = Infinity; // Use squared distance for efficiency
+                liveHumans.forEach(human => {
+                    const distSq = (this.gorilla.x - human.x) ** 2 + (this.gorilla.y - human.y) ** 2;
+                    if (distSq < minDistanceSq) {
+                        minDistanceSq = distSq;
+                        closestHuman = human;
+                    }
+                });
+
+                // Gorilla action: Attack or move
+                if (closestHuman) {
+                    const actualDistance = Math.sqrt(minDistanceSq);
+                    if (actualDistance <= this.gorilla.range && this.gorilla.canHit()) {
+                        this.gorilla.hit(closestHuman);
+                    } else if (actualDistance > this.gorilla.range) {
+                        this.gorilla.moveTo(closestHuman, deadHumans); // Pass corpses for slowdown check
+                    }
+                }
+
+                // Human AI: Attack gorilla if in range, otherwise move towards it
+                liveHumans.forEach(human => {
+                    const distanceToGorilla = human.distanceTo(this.gorilla);
+                    if (distanceToGorilla <= human.range) {
+                        if (human.canHit()) {
+                            human.hit(this.gorilla);
+                        }
+                    } else {
+                        human.moveTo(this.gorilla, deadHumans); // Pass corpses for slowdown check
+                    }
+                });
+
+                // Resolve collisions between live humans
+                this.resolveCollisions(liveHumans);
+            }
+
+            // Simple collision resolution between actors in an array
+            resolveCollisions(actors) {
+                for (let i = 0; i < actors.length; i++) {
+                    for (let j = i + 1; j < actors.length; j++) {
+                        const actorA = actors[i];
+                        const actorB = actors[j];
+                        const deltaX = actorB.x - actorA.x;
+                        const deltaY = actorB.y - actorA.y;
+                        const distance = Math.hypot(deltaX, deltaY);
+                        const minDistance = actorA.radius + actorB.radius; // Sum of radii
+
+                        // If overlapping
+                        if (distance > 0 && distance < minDistance) {
+                            const overlap = minDistance - distance;
+                            const normX = deltaX / distance; // Normalized direction vector
+                            const normY = deltaY / distance;
+                            // Move actors apart along the collision axis
+                            actorA.setPosition(actorA.x - normX * overlap / 2, actorA.y - normY * overlap / 2);
+                            actorB.setPosition(actorB.x + normX * overlap / 2, actorB.y + normY * overlap / 2);
+                        }
+                    }
+                }
+            }
+
+            // Draw all actors on the canvas
+            draw() {
+                context.clearRect(0, 0, canvasWidth, canvasHeight); // Clear canvas
+                this.humans.forEach(human => human.draw()); // Draw all humans (alive and dead)
+                this.gorilla.draw(); // Draw gorilla
+            }
+        }
+
+        /* ==== UI wiring ==== */
+        let currentBattle = null; // Holds the active Battle instance
+        let autoRunQueue = 0; // Number of automatic runs remaining
+        let runHistoryData = []; // Array to store results and config for each run
+
+        // Adds a result entry to the history list in the UI
+        function logRunResult(result, index) { // Added index parameter
+            const listItem = document.createElement('li');
+            listItem.dataset.runIndex = index; // Store the index of the run
+            listItem.style.cursor = 'pointer'; // Indicate it's clickable
+            listItem.title = 'Click to copy config (base64)'; // Add tooltip
+
+            let details = '';
+            // Use optional chaining in case currentBattle is null when logging old results or if stop is pressed early
+            if (result.gorillaWon) {
+                const gorillaHp = currentBattle?.gorilla?.hp.toFixed(1) || 'N/A';
+                details = `🦍 wins with ${gorillaHp} HP • ${result.humansLeft} humans left`;
+            } else {
+                const remainingHumanHp = currentBattle?.humans
+                    ?.filter(h => h.alive)
+                    .reduce((sum, h) => sum + h.hp, 0)
+                    .toFixed(1) || 'N/A';
+                details = `🧍Humans win (${result.humansLeft} left with ${remainingHumanHp} total HP)`;
+            }
+            listItem.textContent = `Run ${index + 1}: ${details} • ${result.time}s`; // Use index + 1 for display
+            getElementById('history').prepend(listItem); // Add to top of list
+        }
+
+        // Applies a configuration object to the UI input fields
+        function applyConfigurationToUI(config) {
+            try {
+                getElementById('inHumans').value = config.humanCount;
+                getElementById('inHumanHp').value = config.humanHp;
+                getElementById('inGorillaHp').value = config.gorillaHp;
+                getElementById('inHumanSpeed').value = config.humanSpeed;
+                getElementById('inGorillaSpeed').value = config.gorillaSpeed;
+                getElementById('inHumanRange').value = config.humanRange;
+                getElementById('inGorillaRange').value = config.gorillaRange;
+                getElementById('inHumanDMin').value = config.humanDamage[0];
+                getElementById('inHumanDMax').value = config.humanDamage[1];
+                getElementById('inGorillaDMin').value = config.gorillaDamage[0];
+                getElementById('inGorillaDMax').value = config.gorillaDamage[1];
+                getElementById('inHumanCD').value = config.humanCooldown;
+                getElementById('inGorillaCD').value = config.gorillaCooldown;
+                getElementById('inKnockback').value = config.knockback;
+                getElementById('inHumanKnockbackMin').value = config.humanKnockbackMin;
+                getElementById('inHumanKnockbackMax').value = config.humanKnockbackMax;
+                getElementById('inGorillaKnockbackMin').value = config.gorillaKnockbackMin;
+                getElementById('inGorillaKnockbackMax').value = config.gorillaKnockbackMax;
+                // Note: Auto-runs ('inAuto') is not part of the saved config, so it's not loaded.
+            } catch (error) {
+                console.error("Error applying configuration to UI:", error);
+                alert("Failed to apply configuration. Check if the format is correct.");
+            }
+        }
+
+        // Reads simulation parameters from the input fields
+        function getConfigurationFromUI() {
+            return {
+                humanCount: +getElementById('inHumans').value,
+                humanHp: +getElementById('inHumanHp').value,
+                gorillaHp: +getElementById('inGorillaHp').value,
+                humanSpeed: +getElementById('inHumanSpeed').value,
+                gorillaSpeed: +getElementById('inGorillaSpeed').value,
+                humanRange: +getElementById('inHumanRange').value,
+                gorillaRange: +getElementById('inGorillaRange').value,
+                humanDamage: [+getElementById('inHumanDMin').value, +getElementById('inHumanDMax').value],
+                gorillaDamage: [+getElementById('inGorillaDMin').value, +getElementById('inGorillaDMax').value],
+                humanCooldown: +getElementById('inHumanCD').value,
+                gorillaCooldown: +getElementById('inGorillaCD').value,
+                knockback: +getElementById('inKnockback').value,
+                humanKnockbackMin: +getElementById('inHumanKnockbackMin').value, // Read human knockback min
+                humanKnockbackMax: +getElementById('inHumanKnockbackMax').value, // Read human knockback max
+                gorillaKnockbackMin: +getElementById('inGorillaKnockbackMin').value, // Read gorilla knockback min
+                gorillaKnockbackMax: +getElementById('inGorillaKnockbackMax').value // Read gorilla knockback max
+            };
+        }
+
+        // Updates the enabled/disabled state of UI buttons
+        function toggleControls(isRunning) {
+            getElementById('btnStart').disabled = isRunning;
+            getElementById('btnPause').disabled = !isRunning;
+            getElementById('btnStop').disabled = !isRunning;
+            if (!isRunning) {
+                getElementById('btnPause').textContent = 'PAUSE'; // Reset pause button text
+            }
+        }
+
+        // Event listener for the START button
+        getElementById('btnStart').onclick = () => {
+            if (currentBattle && currentBattle.isRunning) return; // Prevent starting if already running
+            autoRunQueue = +getElementById('inAuto').value || 0; // Get number of auto-runs
+            toggleControls(true); // Disable start, enable pause/stop
+            launchNewBattle();
+        };
+
+        // Event listener for the PAUSE/RESUME button
+        getElementById('btnPause').onclick = () => {
+            if (!currentBattle) return;
+            currentBattle.isPaused = !currentBattle.isPaused;
+            getElementById('btnPause').textContent = currentBattle.isPaused ? 'RESUME' : 'PAUSE';
+        };
+
+        // Event listener for the STOP button
+        getElementById('btnStop').onclick = () => {
+            if (currentBattle) {
+                currentBattle.isRunning = false; // Signal the loop to stop
+            }
+            autoRunQueue = 0; // Clear auto-run queue
+            toggleControls(false); // Enable start, disable pause/stop
+        };
+
+        // Event listener for the Load Config button
+        getElementById('btnLoadConfig').onclick = () => {
+            const base64Config = prompt("Paste the base64 encoded configuration string:");
+            if (!base64Config) return; // User cancelled
+
+            try {
+                const jsonConfig = atob(base64Config); // Decode base64
+                const configObject = JSON.parse(jsonConfig); // Parse JSON
+                applyConfigurationToUI(configObject); // Apply to UI fields
+                alert("Configuration loaded successfully!");
+            } catch (error) {
+                console.error("Error loading configuration:", error);
+                alert("Failed to load configuration. Ensure the string is valid base64 encoded JSON.");
+            }
+        };
+
+        // Creates and starts a new Battle instance
+        function launchNewBattle() {
+            const currentConfig = getConfigurationFromUI();
+            currentBattle = new Battle(
+                currentConfig,
+                // onDoneCallback: Called when a battle finishes
+                (result) => {
+                    const runIndex = runHistoryData.length; // Get index before pushing
+                    logRunResult(result, runIndex); // Log to UI list, passing the index
+                    runHistoryData.push(result); // Store result and config
+                    console.log("Run History:", runHistoryData); // Optional: Log to console for verification
+
+                    if (--autoRunQueue > 0) {
+                        // If auto-runs remain, launch the next one immediately
+                        launchNewBattle();
+                    } else {
+                        // Otherwise, update controls to reflect stopped state
+                        toggleControls(false);
+                    }
+                },
+                // onTickCallback: Called each frame to update the timer display
+                (timeString) => {
+                    getElementById('timer').textContent = timeString;
+                }
+            );
+        }
+
+        // Event listener for the history list (event delegation)
+        getElementById('history').addEventListener('click', (event) => {
+            if (event.target && event.target.tagName === 'LI') {
+                const runIndex = event.target.dataset.runIndex;
+                if (runIndex === undefined) return;
+
+                const resultData = runHistoryData[parseInt(runIndex, 10)];
+                if (!resultData || !resultData.config) {
+                    console.error("Could not find config for run index:", runIndex);
+                    alert("Error: Configuration data not found for this run.");
+                    return;
+                }
+
+                try {
+                    const jsonConfig = JSON.stringify(resultData.config);
+                    const base64Config = btoa(jsonConfig); // Encode JSON to base64
+                    navigator.clipboard.writeText(base64Config).then(() => {
+                        // Optional: Visual feedback - temporary highlight
+                        const originalColor = event.target.style.backgroundColor;
+                        event.target.style.backgroundColor = '#0a6';
+                        setTimeout(() => {
+                            event.target.style.backgroundColor = originalColor;
+                        }, 300);
+                        // alert("Configuration copied to clipboard!"); // Alternative feedback
+                    }).catch(err => {
+                        console.error('Failed to copy config to clipboard:', err);
+                        alert('Failed to copy configuration to clipboard.');
+                    });
+                } catch (error) {
+                    console.error("Error encoding or copying configuration:", error);
+                    alert("Failed to encode or copy configuration.");
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
