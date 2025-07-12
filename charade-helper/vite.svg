@@ -1,0 +1,11 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="black" stroke-width="4">
+  <!-- Mask shape -->
+  <path d="M50 40 Q40 120 100 160 Q160 120 150 40 Q100 60 50 40 Z"></path>
+
+  <!-- Eyes -->
+  <circle cx="75" cy="80" r="5" fill="black"></circle>
+  <circle cx="125" cy="80" r="5" fill="black"></circle>
+
+  <!-- Mouth (smile) -->
+  <path d="M80 110 Q100 130 120 110" stroke="black" fill="none"></path>
+</svg>
